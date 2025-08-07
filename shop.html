@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CryptoPet Game - Toko</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color: hsl(270, 95%, 70%);
+        }
+
+        html {
+            overflow-y: scroll;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            position: relative;
+            z-index: 0;
+        }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color);
+        }
+
+        .glow-button {
+            background: linear-gradient(135deg, #bb00ff, #ff0080, #683fff);
+            background-size: 200% 200%;
+            animation: gradientFlow 4s ease infinite;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.5), 0 0 30px rgba(168, 85, 247, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .glow-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.7), 0 0 40px rgba(250, 204, 21, 0.5);
+        }
+        
+        .glow-button:disabled {
+            background: #4a4a4a;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        @keyframes gradientFlow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .shop-card {
+            background: rgba(58, 52, 94, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            transition: all 0.3s ease-in-out;
+            transform-style: preserve-3d;
+            box-shadow: 0 0 30px rgba(171, 86, 226, 0.15);
+        }
+
+        .shop-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow:
+                0 0 25px rgba(171, 86, 226, 0.6),
+                0 0 50px rgba(171, 86, 226, 0.4);
+        }
+        
+        .pet-image-container img {
+            width: 170px;
+            height: 170px;
+            object-fit: contain;
+            position: relative;
+            z-index: 2;
+        }
+    </style>
+</head>
+
+<body class="text-white relative z-10">
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="content-wrapper">
+        <div class="container mx-auto p-4 md:p-8">
+            <header class="relative flex items-center justify-between mb-10">
+                <h1 class="text-3xl font-bold z-40">CryptoPet</h1>
+                <nav id="navbarMenu"
+                    class="hidden lg:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 space-x-6 text-gray-300">
+                </nav>
+                <div class="flex items-center space-x-4 z-40">
+                    <div class="bg-[#3A345E] flex items-center px-4 py-2 rounded-full">
+                        <img src="coin.png" alt="Ikon Koin" class="w-[22px] h-[22px]">
+                        <span id="coinDisplay" class="font-bold text-white ml-[6px] text-sm">0</span>
+                    </div>
+                    <button id="walletBtn" onclick="handleConnection()"
+                        class="hidden lg:block bg-gradient-to-r from-[#AB56E2] to-[#7A5BF5] text-white text-sm px-4 py-2 rounded-full font-semibold hover:opacity-90 transition-opacity">
+                        Connect Wallet
+                    </button>
+                    <button id="mobile-menu-button" class="lg:hidden text-white focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <div id="mobile-menu"
+                class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+                <div class="bg-[#3A345E] w-[90%] max-w-sm p-6 rounded-2xl shadow-lg border border-purple-500">
+                    <nav class="flex flex-col items-center space-y-4">
+                        <a href="shop.html"
+                            class="block text-white py-2 text-lg w-full text-center hover:bg-purple-700 rounded-lg">Shop</a>
+                        <a href="gacha.html"
+                            class="block text-white py-2 text-lg w-full text-center hover:bg-purple-700 rounded-lg">Gacha</a>
+                        <a href="about.html"
+                            class="block text-white py-2 text-lg w-full text-center hover:bg-purple-700 rounded-lg">About</a>
+                        <div id="mobile-collection-link" class="w-full"></div>
+                        <hr class="w-full border-gray-500 my-2">
+                        <button id="mobileConnectBtn" onclick="connectPlugMobile()"
+                            class="bg-gradient-to-r from-[#AB56E2] to-[#7A5BF5] text-white text-md w-full px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity">
+                            Connect Wallet
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <main>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-20">
+                    <div class="shop-card p-8 text-center flex flex-col items-center min-h-[400px]">
+                        <div class="pet-image-container">
+                            <img src="Bear 1.png" alt="Bear" />
+                        </div>
+                        <h2 class="text-xl font-bold mb-1">Bear</h2>
+                        <div class="flex items-center justify-center gap-1 mb-6">
+                            <img src="coin.png" alt="Koin" class="w-[22px] h-[22px]" />
+                            <span class="text-sm font-medium">400</span>
+                        </div>
+                        <button id="buy-beruang" class="glow-button w-full"
+                            onclick="beliHewan('beruang', 'Bear', 400)">Donation</button>
+                    </div>
+
+                    <div class="shop-card p-6 text-center flex flex-col items-center min-h-[400px]">
+                        <div class="pet-image-container">
+                            <img src="kucing123.png" alt="Cat" />
+                        </div>
+                        <h2 class="text-xl font-bold mb-1">Cat</h2>
+                        <div class="flex items-center justify-center gap-1 mb-6">
+                            <img src="coin.png" alt="Koin" class="w-[22px] h-[22px]" />
+                            <span class="text-sm font-medium">400</span>
+                        </div>
+                        <button id="buy-kucing" class="glow-button w-full"
+                            onclick="beliHewan('kucing', 'Cat', 400)">Donation</button>
+                    </div>
+
+                    <div class="shop-card p-6 text-center flex flex-col items-center min-h-[400px]">
+                        <div class="pet-image-container">
+                            <img src="Ayam.png" alt="Chicken" />
+                        </div>
+                        <h2 class="text-xl font-bold mb-1">Chicken</h2>
+                        <div class="flex items-center justify-center gap-1 mb-6">
+                            <img src="coin.png" alt="Koin" class="w-[22px] h-[22px]" />
+                            <span class="text-sm font-medium">400</span>
+                        </div>
+                        <button id="buy-ayam" class="glow-button w-full"
+                            onclick="beliHewan('ayam', 'Chicken', 400)">Donation</button>
+                    </div>
+
+                    <div class="shop-card p-6 text-center flex flex-col items-center min-h-[400px]">
+                        <div class="pet-image-container">
+                            <img src="gajah 1.png" alt="Elephant" />
+                        </div>
+                        <h2 class="text-xl font-bold mb-1">Elephant</h2>
+                        <div class="flex items-center justify-center gap-1 mb-6">
+                            <img src="coin.png" alt="Koin" class="w-[22px] h-[22px]" />
+                            <span class="text-sm font-medium">400</span>
+                        </div>
+                        <button id="buy-gajah" class="glow-button w-full"
+                            onclick="beliHewan('gajah', 'Elephant', 400)">Donation</button>
+                    </div>
+
+                    <div class="shop-card p-6 text-center flex flex-col items-center min-h-[400px]">
+                        <div class="pet-image-container">
+                            <img src="kelinci.png" alt="Rabbit" />
+                        </div>
+                        <h2 class="text-xl font-bold mb-1">Rabbit</h2>
+                        <div class="flex items-center justify-center gap-1 mb-6">
+                            <img src="coin.png" alt="Koin" class="w-[22px] h-[22px]" />
+                            <span class="text-sm font-medium">400</span>
+                        </div>
+                        <button id="buy-kelinci" class="glow-button w-full"
+                            onclick="beliHewan('kelinci', 'Rabbit', 400)">Donation</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="topUpModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+            <div class="bg-[#2B254B] p-6 rounded-2xl w-[300px] text-center shadow-xl border border-white/10">
+                <h2 class="text-xl font-bold mb-4">Top Up Coins</h2>
+                <div class="space-y-3">
+                    <button onclick="topUp(100)"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 ease-in-out">100
+                        Coins</button>
+                    <button onclick="topUp(500)"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 ease-in-out">500
+                        Coins</button>
+                    <button onclick="topUp(1000)"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 ease-in-out">1000
+                        Coins</button>
+                </div>
+                <button onclick="closeTopUpModal()" class="mt-4 text-sm text-red-300 hover:underline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="coin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navbar = document.getElementById("navbarMenu");
+            const currentPage = window.location.pathname;
+            const koleksi = JSON.parse(sessionStorage.getItem("koleksiPet") || "[]");
+            const navClass = (page) =>
+                currentPage.includes(page) ?
+                "text-[#F9C0FF] border-b-2 border-[#F9C0FF] pb-1 font-semibold" :
+                "hover:text-white pb-1 font-semibold text-gray-300";
+
+            if (navbar) {
+                navbar.innerHTML = `
+                    <a href="shop.html" class="${navClass('shop')}">Shop</a>
+                    <a href="gacha.html" class="${navClass('gacha')}">Gacha</a>
+                    <a href="about.html" class="${navClass('about')}">About</a>
+                    ${koleksi.length > 0 ? `<a href="collection.html" class="${navClass('collection')}">Collection</a>` : ""}
+                    `;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileCollectionLinkContainer = document.getElementById('mobile-collection-link');
+            const mobileConnectBtn = document.getElementById('mobileConnectBtn');
+            const isConnected = sessionStorage.getItem('plugConnected') === 'true';
+
+            const toggleMenu = () => {
+                const isHidden = mobileMenu.classList.contains('hidden');
+                if (isHidden) {
+                    const koleksi = JSON.parse(sessionStorage.getItem("koleksiPet") || "[]");
+                    mobileCollectionLinkContainer.innerHTML = koleksi.length > 0 ?
+                        '<a href="collection.html" class="block text-white py-2 text-lg w-full text-center hover:bg-purple-700 rounded-lg">Collection</a>' : '';
+
+                    mobileConnectBtn.textContent = isConnected ? "Top Up" : "Connect Wallet";
+                    mobileConnectBtn.onclick = isConnected ? showTopUpModal : handleConnection;
+                }
+                mobileMenu.classList.toggle('hidden');
+            };
+
+            menuButton.addEventListener('click', toggleMenu);
+
+            mobileMenu.addEventListener('click', (e) => {
+                if (e.target === mobileMenu) {
+                    toggleMenu();
+                }
+            });
+        });
+
+        function connectPlugMobile() {
+            handleConnection();
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        // ============================
+        // FUNGSI UTAMA TOKO
+        // ============================
+        function beliHewan(hewanId, namaHewan, harga) {
+            let coins = parseInt(sessionStorage.getItem("coins")) || 0;
+            let koleksiPet = JSON.parse(sessionStorage.getItem("koleksiPet") || "[]");
+
+            if (koleksiPet.includes(hewanId)) {
+                alert("Kamu sudah memiliki hewan ini!");
+                return;
+            }
+
+            if (coins >= harga) {
+                if (confirm(`Apakah kamu yakin ingin membeli ${namaHewan} seharga ${harga} koin?`)) {
+                    coins -= harga;
+                    sessionStorage.setItem("coins", coins);
+                    koleksiPet.push(hewanId);
+                    sessionStorage.setItem("koleksiPet", JSON.stringify(koleksiPet));
+                    updateCoinDisplay();
+                    alert(`🎉 Selamat! Kamu sekarang memiliki ${namaHewan}!`);
+                    checkOwnedPets(); // Perbarui tampilan tombol setelah pembelian
+                    window.location.href = `${hewanId}.html`; // Arahkan ke halaman pet yang baru dibeli
+                }
+            } else {
+                alert("❌ Koinmu tidak cukup!");
+            }
+        }
+
+        // ============================
+        // FUNGSI UNTUK MEMERIKSA DAN MEMPERBARUI TOMBOL SAAT HALAMAN DIMUAT
+        // ============================
+        function checkOwnedPets() {
+            const koleksiPet = JSON.parse(sessionStorage.getItem("koleksiPet") || "[]");
+            const petButtons = {
+                beruang: document.getElementById('buy-beruang'),
+                kucing: document.getElementById('buy-kucing'),
+                ayam: document.getElementById('buy-ayam'),
+                gajah: document.getElementById('buy-gajah'),
+                kelinci: document.getElementById('buy-kelinci')
+            };
+
+            koleksiPet.forEach(hewanId => {
+                const button = petButtons[hewanId];
+                if (button) {
+                    button.textContent = "Owned";
+                    button.disabled = true;
+                }
+            });
+        }
+        
+        document.addEventListener("DOMContentLoaded", checkOwnedPets);
+    </script>
+    <script>
+        // Script untuk partikel di latar belakang
+        const canvas = document.getElementById("particle-canvas");
+        const ctx = canvas.getContext("2d");
+        let particlesArray = [];
+        let mouse = { x: null, y: null, radius: 100 };
+
+        window.addEventListener('mousemove', function (event) {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 2;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (mouse.x !== null && mouse.y !== null) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < mouse.radius) {
+                        const forceDirectionX = dx / distance;
+                        const forceDirectionY = dy / distance;
+                        const maxForce = 0.5;
+                        const attractionForce = maxForce * (1 - distance / mouse.radius);
+
+                        this.speedX += attractionForce * forceDirectionX;
+                        this.speedY += attractionForce * forceDirectionY;
+                    }
+                }
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+
+                this.speedX *= 0.98;
+                this.speedY *= 0.98;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(171, 86, 226, 0.7)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            for (let i = 0; i < 120; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let particle of particlesArray) {
+                particle.update();
+                particle.draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+    </script>
+</body>
+
+</html>

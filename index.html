@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Wallet - CryptoPet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsSHA/3.2.0/sha.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color: hsl(270, 95%, 65%);
+        }
+
+        html {
+            overflow-y: scroll; /* Memastikan scrollbar vertikal selalu ada */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #000000;
+            background-color: #000000; /* DITAMBAHKAN: Mengubah warna background menjadi hitam */
+            /* background: linear-gradient(to bottom right, #3A345E, #000000); */ /* DIHAPUS/DIKOMENTARI: diganti background partikel */
+            /* overflow: hidden; */ /* DIHAPUS: untuk konsistensi scrollbar */
+            margin: 0;
+            perspective: 1000px;
+            min-height: 100vh; /* DITAMBAHKAN: untuk tinggi penuh viewport */
+        }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* DIUBAH: agar di belakang kartu */
+            pointer-events: none; /* DITAMBAHKAN: agar kursor bisa berinteraksi dengan elemen di bawah canvas */
+        }
+
+        .card-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            transform-style: preserve-3d;
+        }
+
+        .interactive-card {
+            background: rgba(15, 8, 35, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 3rem 3.5rem;
+            text-align: center;
+            width: 100%;
+            max-width: 36rem;
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.6),
+                0 0 60px rgba(171, 86, 226, 0.3);
+            transition: all 0.5s ease;
+            transform: rotateX(5deg) rotateY(-5deg);
+        }
+
+        .interactive-card:hover {
+            transform: rotateX(0deg) rotateY(0deg) scale(1.03);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.7),
+                0 0 80px rgba(171, 86, 226, 0.5);
+        }
+
+        .connect-button {
+            background: var(--glow-color);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            box-shadow: 0 0 20px rgba(171, 86, 226, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .connect-button:hover {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 0 30px rgba(171, 86, 226, 0.9),
+                0 0 60px rgba(171, 86, 226, 0.6);
+        }
+
+        h1 {
+            text-shadow: 0 0 10px var(--glow-color);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="card-container">
+        <div id="card" class="interactive-card">
+            <h1 class="text-4xl font-bold text-white mb-2">
+                CryptoPet
+            </h1>
+            <p class="text-md text-gray-300 mb-8">
+                The future of digital companionship is here.
+            </p>
+            <button id="connectBtn" onclick="handleConnection()" class="connect-button text-white w-full">
+                Connect to Plug Wallet
+            </button>
+        </div>
+    </div>
+
+    <script src="coin.js"></script>
+    <script>
+        const canvas = document.getElementById("particle-canvas");
+        const ctx = canvas.getContext("2d");
+        let particlesArray = [];
+        let mouse = {
+            x: null,
+            y: null,
+            radius: 100 // Radius of influence for particles
+        };
+
+        // Event listener for mouse movement
+        window.addEventListener('mousemove', function(event) {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 2; // Ukuran partikel lebih besar
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+            }
+            update() {
+                // Keep original random movement
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Attraction to mouse
+                if (mouse.x !== null && mouse.y !== null) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < mouse.radius) {
+                        const forceDirectionX = dx / distance;
+                        const forceDirectionY = dy / distance;
+                        const maxForce = 0.5; // Max attraction force
+                        const attractionForce = maxForce * (1 - distance / mouse.radius); // Stronger closer to mouse
+
+                        this.speedX += attractionForce * forceDirectionX;
+                        this.speedY += attractionForce * forceDirectionY;
+                    }
+                }
+
+                // Keep bounds (bounce)
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+
+                // Optional: friction to dampen speed
+                this.speedX *= 0.98;
+                this.speedY *= 0.98;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(171, 86, 226, 0.7)'; // Opasitas partikel lebih tinggi
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            for (let i = 0; i < 120; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let particle of particlesArray) {
+                particle.update();
+                particle.draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+    </script>
+</body>
+
+</html>

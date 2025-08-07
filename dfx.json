@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "PetCoin_backend": {
+      "main": "src/PetCoin_backend/main.mo",
+      "type": "motoko"
+    },
+    "PetCoin_frontend": {
+      "dependencies": [
+        "PetCoin_backend"
+      ],
+      "source": [
+        "src/PetCoin_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "PetCoin_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
